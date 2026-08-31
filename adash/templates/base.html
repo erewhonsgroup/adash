@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}ADash{% endblock %}</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      {% block body %}{% endblock %}
+      <footer>ADash {{ version }} · {{ hostname }} · SQLite hub for the fleet control center</footer>
+    </div>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

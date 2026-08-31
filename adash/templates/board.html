@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}ADash · fleet board{% endblock %}
+{% block body %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Control center</p>
+    <h1>ADash</h1>
+    <p class="meta">{{ hostname }} · last ingest {{ last_ingest or "never" }} · {{ projects|length }} visible / {{ tally.get("projects", 0) }} stored</p>
+  </div>
+  <div class="stats">
+    {% for key in ["working", "review", "blocked", "queued", "done", "idle"] %}
+    <div class="stat">
+      <b>{{ tally.get("state:" ~ key, 0) }}</b>
+      <span class="muted">{{ key }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<form class="filters" method="get" action="/">
+  <select name="pc">
+    <option value="">all pcs</option>
+    {% for item in pcs %}
+    <option value="{{ item }}" {% if pc == item %}selected{% endif %}>{{ item }}</option>
+    {% endfor %}
+  </select>
+  <select name="state">
+    <option value="">all states</option>
+    {% for item in states %}
+    <option value="{{ item }}" {% if state == item %}selected{% endif %}>{{ item }}</option>
+    {% endfor %}
+  </select>
+  <input name="attention" value="{{ attention }}" placeholder="attention label" />
+  <input name="q" value="{{ q }}" placeholder="search id, title, path, task" />
+  <button type="submit">Filter</button>
+  <button class="ghost" type="submit" form="ingest-form">Re-ingest</button>
+</form>
+<form id="ingest-form" method="post" action="/api/ingest" hidden></form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Attention</th>
+      <th>State</th>
+      <th>PC</th>
+      <th>Id</th>
+      <th>Title</th>
+      <th>Path</th>
+      <th>Task</th>
+      <th>Updated</th>
+    </tr>
+  </thead>
+  <tbody id="board-body">
+    {% include "board_rows.html" %}
+  </tbody>
+</table>
+{% endblock %}
+{% block scripts %}
+<script>
+  const qs = window.location.search;
+  setInterval(() => {
+    fetch("/fragment/board" + qs)
+      .then((r) => r.text())
+      .then((html) => {
+        const body = document.getElementById("board-body");
+        if (body) body.innerHTML = html;
+      })
+      .catch(() => {});
+  }, 30000);
+  document.getElementById("ingest-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await fetch("/api/ingest", { method: "POST" });
+    window.location.reload();
+  });
+</script>
+{% endblock %}

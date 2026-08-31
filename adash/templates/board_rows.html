@@ -1,0 +1,16 @@
+{% for project in projects %}
+<tr>
+  <td><span class="badge {{ project.attention }}">{{ project.attention }}</span></td>
+  <td>{{ project.state }}</td>
+  <td class="mono">{{ project.pc }}</td>
+  <td class="mono"><a href="/project/{{ project.pc }}/{{ project.id }}">{{ project.id }}</a></td>
+  <td>{{ project.title }}</td>
+  <td class="mono {% if not project.exists_on_disk %}gone{% endif %}">{{ project.path }}</td>
+  <td>{{ project.task }}</td>
+  <td class="muted">{{ project.updated_at }}</td>
+</tr>
+{% else %}
+<tr>
+  <td colspan="8" class="muted">No projects match. Run <span class="mono">python -m adash ingest</span>.</td>
+</tr>
+{% endfor %}

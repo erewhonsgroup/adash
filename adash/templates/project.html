@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ project.id }} · ADash{% endblock %}
+{% block body %}
+<p class="eyebrow"><a href="/">Fleet board</a></p>
+<h1>{{ project.title }}</h1>
+<p class="meta mono">{{ project.pc }} / {{ project.id }} · {{ project.source }} · {{ project.path }}</p>
+
+<section class="grid">
+  <div class="panel">
+    <p><span class="badge {{ project.attention }}">{{ project.attention }}</span> {{ project.reason }}</p>
+    <p><b>State</b> {{ project.state }}</p>
+    <p><b>Task</b> {{ project.task or "—" }}</p>
+    <p><b>Note</b> {{ project.note or "—" }}</p>
+    <p><b>Blocker</b> {{ project.blocker or "—" }}</p>
+    <p><b>Purpose</b> {{ project.purpose or "—" }}</p>
+    <p><b>Command</b> <span class="mono">{{ project.command or "—" }}</span></p>
+    <p><b>Groups</b> {{ groups|join(", ") or "—" }}</p>
+    <p><b>On disk</b> {{ "yes" if project.exists_on_disk else "no" }} · <b>git</b> {{ "yes" if project.is_git else "no" }} · <b>dirty</b> {{ project.git_dirty or "unknown" }}</p>
+    <p class="muted">Updated {{ project.updated_at or "—" }} · ingested {{ project.ingested_at }}</p>
+  </div>
+  <div class="panel">
+    <h2>Update state</h2>
+    <form class="stack" method="post" action="/project/{{ project.pc }}/{{ project.id }}/state">
+      <label>State
+        <select name="state">
+          {% for item in states %}
+          <option value="{{ item }}" {% if project.state == item %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Task <input name="task" value="{{ project.task }}" /></label>
+      <label>Note <textarea name="note">{{ project.note }}</textarea></label>
+      <label>Blocker <input name="blocker" value="{{ project.blocker }}" /></label>
+      <button type="submit">Save to hub</button>
+    </form>
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 1rem">
+  <h2>Events</h2>
+  {% for event in events %}
+  <div class="event">
+    <div class="mono muted">{{ event.time }} · {{ event.event_type }} · {{ event.pc }}</div>
+    <div>{{ event.previous_state }} → {{ event.state }} · {{ event.task }}</div>
+    {% if event.note %}<div class="muted">{{ event.note }}</div>{% endif %}
+  </div>
+  {% else %}
+  <p class="muted">No hub events yet for this project.</p>
+  {% endfor %}
+</section>
+{% endblock %}
