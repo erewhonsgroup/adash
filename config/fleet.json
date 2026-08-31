@@ -10,6 +10,12 @@
     "C:\\ACLC\\projects",
     "D:\\Projects"
   ],
+  "project_dashboards": {
+    "jarvis": {
+      "kind": "jj",
+      "root": "C:\\ALLU\\projects\\Jarvis"
+    }
+  },
   "pcs": [
     {"id": "pc1", "hostname": "JESUSISKING", "role": "main"},
     {"id": "pc2", "hostname": "PRAISEJESUS", "role": "satellite"},

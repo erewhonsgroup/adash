@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}JJ · ADash{% endblock %}
+{% block body %}
+<p class="eyebrow"><a href="/">Fleet board</a> · Jarvis / JJ</p>
+<section class="hero">
+  <div>
+    <h1>JJ command deck</h1>
+    <p class="meta mono">{{ project.pc }} / {{ project.id }} · {{ kernel_root }} · {{ kernel.event_total }} ledger events</p>
+    <p class="muted">{{ project.purpose or "Joshua's owner-controlled personal agent kernel. Search label: Jarvis." }}</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>{{ kernel.open_tasks|length }}</b><span class="muted">open</span></div>
+    <div class="stat"><b>{{ kernel.working_tasks|length }}</b><span class="muted">working</span></div>
+    <div class="stat"><b>{{ kernel.inbox|length }}</b><span class="muted">inbox</span></div>
+    <div class="stat"><b>{{ kernel.memory_proposed|length }}</b><span class="muted">memory</span></div>
+  </div>
+</section>
+
+{% if flash %}<p class="badge working">{{ flash }}</p>{% endif %}
+{% if flash_error %}<p class="badge blocked">{{ flash_error }}</p>{% endif %}
+{% if not kernel.ok %}<p class="badge missing">Kernel unread: {{ kernel.error }}</p>{% endif %}
+
+<form class="command-bar" method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+  <label class="mono" for="line">:</label>
+  <input id="line" name="line" autofocus placeholder="task add …  |  approve 3  |  deny 3  |  task done 5  |  task drop 5" />
+  <button type="submit">Run</button>
+</form>
+<p class="muted">Same audited JJ stores as <span class="mono">python -m jj</span>. Does not spawn workers. Native cockpit stays <span class="mono">python -m jj cockpit</span> on :8377.</p>
+
+<div class="deck">
+  <section class="panel">
+    <h2>Next work</h2>
+    {% for task in kernel.open_tasks %}
+    <div class="row">
+      <span class="mono muted">#{{ task.id }}</span>
+      <span class="grow">{{ task.title }}</span>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="task done {{ task.id }}" />
+        <button type="submit">Done</button>
+      </form>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="task drop {{ task.id }}" />
+        <button class="ghost" type="submit">Drop</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="muted">No open JJ tasks.</p>
+    {% endfor %}
+    {% for task in kernel.working_tasks %}
+    <div class="row">
+      <span class="mono muted">#{{ task.id }}</span>
+      <span class="grow">{{ task.title }}</span>
+      <span class="badge working">{{ task.status }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Approval inbox</h2>
+    {% for item in kernel.inbox %}
+    <div class="row">
+      <span class="mono muted">#{{ item.id }}</span>
+      <span class="grow">{{ item.kind }} · <b>{{ item.subject }}</b><div class="muted">{{ item.reason }}</div></span>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="approve {{ item.id }}" />
+        <button type="submit">Approve</button>
+      </form>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="deny {{ item.id }}" />
+        <button class="ghost" type="submit">Deny</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="muted">Inbox empty.</p>
+    {% endfor %}
+    {% for item in kernel.decided %}
+    <div class="row">
+      <span class="mono muted">#{{ item.id }}</span>
+      <span class="grow">{{ item.kind }} · {{ item.subject }}</span>
+      <span class="badge {% if item.status == 'approved' %}working{% else %}blocked{% endif %}">{{ item.status }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Live ledger</h2>
+    {% for event in kernel.events|reverse %}
+    <div class="row">
+      <span class="mono muted">#{{ event.id }}</span>
+      <span class="grow"><span class="badge idle">{{ event.type }}</span> {{ event.data }}</span>
+    </div>
+    {% else %}
+    <p class="muted">No events.</p>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Runs</h2>
+    {% for run in kernel.runs|reverse %}
+    <div class="row">
+      <span class="mono muted">#{{ run.id }}</span>
+      <span class="grow">task {{ run.task_id }} · {{ run.worker }}</span>
+      <span class="badge idle">{{ run.status }}</span>
+    </div>
+    {% else %}
+    <p class="muted">No runs.</p>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Memory court</h2>
+    {% for item in kernel.memory_proposed %}
+    <div class="row">
+      <span class="mono muted">#{{ item.id }}</span>
+      <span class="grow">{{ item.statement }}<div class="muted">{{ item.category }}</div></span>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="memory approve {{ item.id }}" />
+        <button type="submit">Approve</button>
+      </form>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="memory reject {{ item.id }}" />
+        <button class="ghost" type="submit">Reject</button>
+      </form>
+    </div>
+    {% endfor %}
+    {% for item in kernel.memory_active %}
+    <div class="row">
+      <span class="mono muted">#{{ item.id }}</span>
+      <span class="grow">{{ item.statement }}<div class="muted">{{ item.category }}</div></span>
+      <span class="badge working">{{ item.status }}</span>
+    </div>
+    {% endfor %}
+    {% if not kernel.memory_proposed and not kernel.memory_active %}
+    <p class="muted">No memories.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Skills &amp; passports</h2>
+    {% for item in kernel.skills %}
+    <div class="row">
+      <span class="grow"><b>{{ item.name }}</b> {{ item.purpose }}</span>
+      <span class="badge idle">{{ item.status }}</span>
+      {% if item.status == "checked" %}
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="skill promote {{ item.name }}" />
+        <button type="submit">Promote</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% for item in kernel.passports %}
+    <div class="row">
+      <span class="grow"><b>{{ item.name }}</b> {{ item.purpose }}</span>
+      <span class="badge idle">risk {{ item.risk }}</span>
+    </div>
+    {% endfor %}
+    {% if not kernel.skills and not kernel.passports %}
+    <p class="muted">No skills or passports.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" style="margin-top: 1rem">
+  <h2>Hub state</h2>
+  <p><span class="badge {{ project.attention }}">{{ project.attention }}</span> {{ project.reason }} · {{ project.task or "—" }}</p>
+  <form class="stack" method="post" action="/project/{{ project.pc }}/{{ project.id }}/state">
+    <label>State
+      <select name="state">
+        {% for item in states %}
+        <option value="{{ item }}" {% if project.state == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Task <input name="task" value="{{ project.task }}" /></label>
+    <label>Note <textarea name="note">{{ project.note }}</textarea></label>
+    <label>Blocker <input name="blocker" value="{{ project.blocker }}" /></label>
+    <button type="submit">Save hub state</button>
+  </form>
+</section>
+{% endblock %}

@@ -19,7 +19,12 @@ $AMSessions = @(
 """
 
 
-def write_fleet(tmp_path: Path, am_root: Path, scan_root: Path | None = None) -> Path:
+def write_fleet(
+    tmp_path: Path,
+    am_root: Path,
+    scan_root: Path | None = None,
+    extra: dict | None = None,
+) -> Path:
     fleet = {
         "schema_version": "adash.fleet.v1",
         "listen_host": "127.0.0.1",
@@ -33,6 +38,8 @@ def write_fleet(tmp_path: Path, am_root: Path, scan_root: Path | None = None) ->
             {"id": "pc2", "hostname": "PRAISEJESUS", "role": "satellite"},
         ],
     }
+    if extra:
+        fleet.update(extra)
     path = tmp_path / "fleet.json"
     path.write_text(json.dumps(fleet), encoding="utf-8")
     return path

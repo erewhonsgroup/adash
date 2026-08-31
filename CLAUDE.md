@@ -24,7 +24,8 @@ python -m adash serve
 - `adash/ingest.py` — merge registry + AM state + central events + disk probe into SQLite
 - `adash/db.py` — schema init and queries
 - `adash/serve.py` — FastAPI board
-- `adash/templates/` — Jinja board and project pages
+- `adash/dashboards/` — per-project decks; `jj.py` is Jarvis/JJ
+- `adash/templates/` — Jinja board, generic project page, JJ command deck
 
 ## Conventions
 

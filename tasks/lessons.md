@@ -5,3 +5,5 @@
 - Desk PCs use two Windows account roles. `josh` is remoting/admin; the desktop user owns Grok/Claude/Codex state.
 - Reference machines by PC name (`JESUSISKING`, …), never by the logged-in username.
 - ADash must not copy `C:\AM`'s unrelated trees. The hub is inventory + dashboard + SQLite, not a dump of AM.
+- Jarvis/JJ lives at `C:\ALLU\projects\Jarvis`. `C:\ACLC\projects\Jarvis` is not a path on this PC. An empty listing of ALLU is not proof the repo is missing — open that exact folder.
+- Refer to the system as JJ; Jarvis is the search/folder label. Custom ADash decks must call JJ stores, not reimplement ledger writes.

@@ -3,7 +3,7 @@
   <td><span class="badge {{ project.attention }}">{{ project.attention }}</span></td>
   <td>{{ project.state }}</td>
   <td class="mono">{{ project.pc }}</td>
-  <td class="mono"><a href="/project/{{ project.pc }}/{{ project.id }}">{{ project.id }}</a></td>
+  <td class="mono"><a href="/project/{{ project.pc }}/{{ project.id }}">{{ project.id }}</a>{% if project.id in custom_dashboards %} <span class="badge working">deck</span>{% endif %}</td>
   <td>{{ project.title }}</td>
   <td class="mono {% if not project.exists_on_disk %}gone{% endif %}">{{ project.path }}</td>
   <td>{{ project.task }}</td>

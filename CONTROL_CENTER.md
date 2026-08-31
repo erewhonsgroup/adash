@@ -22,7 +22,7 @@ ADash should coordinate:
 
 3. **Ingest** — `python -m adash ingest` rebuilds project rows from AM session files, configured scan roots, read-only central AM events, and local AM state files.
 
-4. **Board** — FastAPI app on `127.0.0.1:8788`. Request handlers do not call git. Re-ingest to refresh.
+4. **Board** — FastAPI app on `127.0.0.1:8788`. Request handlers do not call git. Re-ingest to refresh. Project ids listed in `config/fleet.json` `project_dashboards` get a custom deck instead of the generic project page. First: `jarvis` → JJ command deck (reads `C:\ALLU\projects\Jarvis`, does not copy the kernel).
 
 5. **Check-in** — `python -m adash checkin` writes hub state without touching AM's SMB push path.
 

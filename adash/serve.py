@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import socket
+from urllib.parse import quote
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,9 @@ from fastapi.templating import Jinja2Templates
 
 from adash import VERSION
 from adash.attention import score_attention
+from adash.dashboards import custom_ids, spec_for
+from adash.dashboards.jj import execute as jj_execute
+from adash.dashboards.jj import render_page as jj_render
 from adash.db import connect, counts, get_project, init_db, insert_event, list_events, list_projects, upsert_project
 from adash.ingest import ingest
 from adash.paths import VALID_STATES, load_fleet, local_pc_id, now_stamp
@@ -91,6 +95,7 @@ def create_app() -> FastAPI:
             "local_pc": local_pc_id(app.state.fleet),
             "hostname": socket.gethostname(),
             "version": VERSION,
+            "custom_dashboards": custom_ids(app.state.fleet),
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -136,6 +141,22 @@ def create_app() -> FastAPI:
                 },
                 status_code=404,
             )
+        groups = json.loads(row["groups_json"] or "[]")
+        spec = spec_for(app.state.fleet, project_id)
+        if spec and spec.get("kind") == "jj":
+            return jj_render(
+                request,
+                templates,
+                project=row,
+                events=events,
+                spec=spec,
+                states=VALID_STATES,
+                groups=groups,
+                version=VERSION,
+                hostname=socket.gethostname(),
+                flash=str(request.query_params.get("flash") or ""),
+                flash_error=str(request.query_params.get("err") or ""),
+            )
         return templates.TemplateResponse(
             request,
             "project.html",
@@ -143,11 +164,34 @@ def create_app() -> FastAPI:
                 "project": row,
                 "events": events,
                 "states": VALID_STATES,
-                "groups": json.loads(row["groups_json"] or "[]"),
+                "groups": groups,
                 "version": VERSION,
                 "hostname": socket.gethostname(),
             },
         )
+
+    @app.post("/project/{pc}/{project_id}/command")
+    def project_command(pc: str, project_id: str, line: str = Form("")) -> RedirectResponse:
+        spec = spec_for(app.state.fleet, project_id)
+        target = f"/project/{pc}/{project_id}"
+        if not spec or spec.get("kind") != "jj":
+            return RedirectResponse(url=target, status_code=303)
+        try:
+            result = jj_execute(spec, line)
+            flash = quote(str(result.get("result") or "ok"), safe="")
+            return RedirectResponse(url=f"{target}?flash={flash}", status_code=303)
+        except Exception as exc:  # noqa: BLE001 — command bar must bounce errors to the deck
+            return RedirectResponse(url=f"{target}?err={quote(str(exc), safe='')}", status_code=303)
+
+    @app.get("/api/project/{pc}/{project_id}/kernel")
+    def project_kernel(pc: str, project_id: str) -> JSONResponse:
+        del pc
+        spec = spec_for(app.state.fleet, project_id)
+        if not spec or spec.get("kind") != "jj":
+            return JSONResponse({"ok": False, "error": "no kernel dashboard"}, status_code=404)
+        from adash.dashboards.jj import snapshot as jj_snapshot
+
+        return JSONResponse(jj_snapshot(spec))
 
     @app.post("/project/{pc}/{project_id}/state")
     def write_state(
