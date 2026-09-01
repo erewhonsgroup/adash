@@ -35,6 +35,7 @@ ADash should coordinate:
 - Keep PC identity in `config/fleet.json` hostnames, never in a logged-in username.
 - Preserve stable AM session IDs when importing AM registries.
 - Do not treat "appears in the dashboard" as a project's purpose. Prefer that project's README.
+- Dashboard references and optional deps: OSI-open or fully free self-host only. No paid feature gates. See `docs/DASHBOARD_RESEARCH.md` §0.
 
 ## Relationship to AM
 

@@ -4,6 +4,41 @@ Written 2026-08-31 for ADash / JJ. Purpose: decide what the hub should look like
 
 Sources were checked the same day. Licences, star counts, and product claims move fast; treat product rows as a snapshot.
 
+## 0. Hard filter — open source / free only
+
+Operator rule (2026-08-31): **OSI-open or fully free self-host. No product whose useful fleet/inbox/trace/worktree features sit behind a paid SKU.**
+
+Allowed to *steal UX from* or optionally run:
+
+| Thing | Licence | Notes |
+| --- | --- | --- |
+| ADash, JJ | MIT (ours) | Hub + kernel |
+| [Orca](https://github.com/stablyai/orca) | MIT | ADE; steal Needs-You kanban, not adopt as ADash |
+| [Emdash](https://github.com/generalaction/emdash) | Apache-2.0 | Local-first; steal worktree compare |
+| [Claude Squad](https://github.com/smtg-ai/claude-squad) | AGPL-3.0 | Copyleft; terminal worktrees. Fine to read; do not vend into ADash without AGPL implications |
+| [langchain-ai/agent-inbox](https://github.com/langchain-ai/agent-inbox) | MIT | HITL inbox UX |
+| [LangGraph](https://github.com/langchain-ai/langgraph) OSS | MIT | Runtime, not a dashboard. Do not make it the board |
+| [Langfuse](https://github.com/langfuse/langfuse) self-host | MIT core | Product features (traces, annotation, playground) MIT. `/ee` is SCIM / extra audit / retention — we will not use those; if we need audit, ADash events already do it |
+| [12-factor-agents](https://github.com/humanlayer/12-factor-agents) | Apache-2.0 code, CC BY-SA content | Doctrine |
+| Grok `/dashboard` | already installed | Deep-link live sessions; not a purchase |
+| OpenHands | Apache-2.0 / MIT (project OSS) | Event-loop pattern |
+
+Disqualified (paid gate, source-available-not-OSI, or cloud-only useful bits):
+
+| Thing | Why out |
+| --- | --- |
+| Nimbalyst Teams | MIT app, but Teams is $20/user/mo for the collaboration layer. Paid push for features. |
+| Conductor | Proprietary, macOS |
+| Superset ADE | Elastic License 2.0 — not OSI. Paid seats |
+| Warp (terminal/cloud agents) | Free terminal; fleet/cloud agents on paid tiers |
+| LangSmith | Closed SaaS. LangGraph OSS is fine; Smith is not |
+| CrewAI Enterprise tracing/RBAC | OSS crew framework ≠ paid enterprise board |
+| Bedrock AgentCore, Codex App as control plane | Vendor runtime / single-engine proprietary |
+| Langfuse Cloud / Langfuse `/ee` | Same product, paid modules. Self-host MIT only, or skip |
+| OpenClawHQ Mission Control writeups | Vendor dashboard packaging; prefer the OSS [openclaw-mission-control](https://github.com/abhi1693/openclaw-mission-control) repo if we look at OpenClaw at all |
+
+Steal means copy a *pattern* into ADash (MIT). It does not mean depend on their hosted app.
+
 ## 1. The split that matters
 
 “Agent orchestration dashboard” names two products that do not substitute for each other ([Nimbalyst comparison, Aug 2026](https://nimbalyst.com/blog/best-ai-agent-orchestration-platforms-2026/)):
@@ -11,7 +46,7 @@ Sources were checked the same day. Licences, star counts, and product claims mov
 | Market | Operator | Unit of work | Success | Typical stack |
 | --- | --- | --- | --- | --- |
 | **Workflow / AI OS runtime** | The application | A graph, crew, or always-on agent | Throughput, cost, error rate, durable resume | LangGraph, CrewAI, Microsoft Agent Framework, Bedrock AgentCore, OpenClaw |
-| **Coding-agent control plane** | A human at a keyboard | A task assigned to Claude/Codex/Grok | How much work one person can *supervise* before review breaks | Orca, Emdash, Nimbalyst, Conductor, Claude Squad, Grok dashboard |
+| **Coding-agent control plane** | A human at a keyboard | A task assigned to Claude/Codex/Grok | How much work one person can *supervise* before review breaks | Orca (MIT), Emdash (Apache-2.0), Claude Squad (AGPL), Grok dashboard (already here) |
 
 ADash is the second, plus a **fleet/project inventory** AM already tracked. JJ is the first (a private kernel). Putting LangGraph or CrewAI under the fleet board would buy a library when the missing piece is a workspace. The reverse is equally true: Orca will not be AM Brain.
 
@@ -19,7 +54,7 @@ HumanLayer’s [12-factor agents](https://github.com/humanlayer/12-factor-agents
 
 ## 2. What a control plane has to do
 
-Nimbalyst’s six tests (same article; checked against competitor sites in Aug 2026) are the right checklist. ADash already covers some of them.
+The six control-plane tests below come from a 2026 ADE roundup. The author sells one of the tools (Nimbalyst, which has a paid Teams SKU — disqualified). The *tests* still hold; their product ranking does not.
 
 | Capability | Meaning | ADash now | Gap |
 | --- | --- | --- | --- |
@@ -59,21 +94,17 @@ Apache-2.0, local-first, auto-detects installed CLIs, worktree + branch per task
 
 **Reject:** Becoming a desktop Electron app. ADash stays a local FastAPI board.
 
-### Nimbalyst
+### Nimbalyst — out
 
-MIT visual workspace. Kanban of sessions, optional worktree, inline file review, plus markdown/specs/diagrams as first-class artifacts agents read and write. They wrote the comparison cited above — treat their “best” ranking as self-interested; the *taxonomy* still holds.
+MIT desktop exists, but Teams is a paid SKU for the collaboration layer. Disqualified under the no-paid-feature-gate rule. Taxonomy in their article is still usable; the product is not a dependency.
 
-**Steal:** Artifacts next to the session (ADash already has `knowledge/projects/` and JJ memory court). Specs are not a separate Notion.
+### Claude Squad / dmux (OSS)
 
-**Reject:** Built-in Excalidraw/spreadsheet suite. That is product sprawl AM already suffered.
-
-### Conductor / Claude Squad / dmux
-
-Conductor: macOS-only, sidebar + diff, almost no board. Claude Squad: tmux + worktrees, AGPL. dmux: multiplexer for worktrees.
+Claude Squad: tmux + worktrees, AGPL-3.0. dmux: worktree multiplexer.
 
 **Steal:** Keyboard-first and terminal-native as a *mode*, not the only UI. JJ command bar already points this way.
 
-**Reject:** macOS-only. We are Windows-first (fleet-ops).
+**Reject as ADash code:** AGPL copyleft if we vend Squad. Read it; do not merge it. Conductor (proprietary, macOS) is out entirely.
 
 ### Grok Agent Dashboard (this pager)
 
@@ -98,21 +129,17 @@ These are closer to JJ than to ADash’s fleet table.
 | **OpenHuman** (~39k) | Local-first life memory + fleet orchestrator | Local-first memory as *reviewed* court, which JJ already is | Life-log vacuum into the fleet board |
 | **ClawX / edict / TinyAGI** | Desktop GUI over OpenClaw; “nine agents + audit”; one-person-company teams | Audit trail as first-class | Office-simulator chrome, 186-agent catalogs |
 | **AutoGen Studio** | No-code multi-agent canvas. AutoGen itself is in maintenance; Microsoft Agent Framework is the successor (GA Apr 2026 per Dataiku roundup) | HITL interrupt | Canvas-as-architecture |
-| **CrewAI Enterprise** | Role crews + paid tracing, RBAC, immutable audit | Audit + cost accounting as *events*, not a SaaS | Role-play crews as the ADash metaphor |
+| **CrewAI OSS vs Enterprise** | OSS crew framework is separate from paid Enterprise tracing/RBAC | Audit + cost as *events* we already write | Paid enterprise board; role-play crews as the ADash metaphor |
 
 **LangChain Agent Inbox** ([langchain-ai/agent-inbox](https://github.com/langchain-ai/agent-inbox)): dedicated UX for human-in-the-loop interrupts from LangGraph. The whole product is an inbox. That is the strongest single-screen analogue to JJ’s approval panel and ADash `blocked`/`review`.
 
 ## 5. Observability boards (do not become these)
 
-LangSmith, Langfuse, Arize Phoenix, Helicone are **trace analytics**, not command centers.
+LangSmith is **closed SaaS** — out as a product. Langfuse self-host MIT covers tracing, evals, annotation, playground; `/ee` (SCIM, extra audit, retention) is commercial and we will not use it. Arize Phoenix OSS exists; Helicone has a cloud SKU — prefer Phoenix/Langfuse self-host or just ADash events.
 
-LangSmith prebuilt dashboards: trace count, latency, errors, token/cost ([docs](https://docs.langchain.com/langsmith/dashboards)). Trace UI now treats **threads** as the unit, with Messages / Turns / trace-tree modes ([view traces](https://docs.langchain.com/langsmith/view-traces)). Annotation queues for human review.
+**Steal (from public OSS / docs, implement in ADash):** Thread = session id. Collapsed “same tool 3×” in a run stream. Cost as an event field (JJ NEXT_PHASES “Cost & Trace Board”). Annotation queue = review state.
 
-Langfuse: session view, annotation queues, custom widgets, graph view that collapses repeated nodes (`retrieve_docs (3/3)`) or expands the DAG ([July 2026 update](https://langfuse.com/blog/2026-07-31-langfuse-july-update)).
-
-**Steal:** Thread = ADash session id. Collapsed “same tool 3×” in a run stream. Cost as an event field (JJ NEXT_PHASES “Cost & Trace Board”). Annotation queue = review state.
-
-**Reject:** Latency charts as the home screen. Drag-and-drop widget builders. “Insights” tiles with no action (forbidden by `DESIGN_TASTE.md`).
+**Reject:** LangSmith Cloud. Langfuse Cloud. Latency charts as the home screen. Drag-and-drop widget builders. “Insights” tiles with no action (forbidden by `DESIGN_TASTE.md`). Paying for audit logs we can append to SQLite ourselves.
 
 ## 6. Design patterns that survive contact with JJ taste
 
@@ -126,7 +153,7 @@ Patterns that agree with that file *and* with the 2026 control-plane products:
 4. **Live stream is actions, not chat.** OpenHands event loop. Cards: who, what tool, evidence, Approve/Abort.
 5. **Worktree / lane as identity.** Every parallel coding-agent product converged here. JJ WORKTREE_ARENA.md is the spec; ADash should show lane + branch when present.
 6. **Idle is noise.** Grok folds it. Orca hides it. Do not paginate 200 idle AM sessions as the home view.
-7. **One engine picker, your keys.** Orca/Emdash/Nimbalyst all refuse to resell inference. ADash must not become a proxy bill.
+7. **One engine picker, your keys.** Orca and Emdash refuse to resell inference (MIT / Apache-2.0). ADash must not become a proxy bill.
 8. **Dense, keyboard, split panes.** Bloomberg / CIC / war-room, which DESIGN_TASTE already named. Not empty heroes.
 
 Patterns to refuse even though they poll well on GitHub:
@@ -134,7 +161,7 @@ Patterns to refuse even though they poll well on GitHub:
 - Glassmorphism + micro-animations (multi-agent-orchestrator marketing).
 - Visual DAG editors as the *daily* UI (FastGPT, Bisheng, CrewAI studio). Fine as a rare debug view (Langfuse expanded graph).
 - ROI / “board-ready investment” widgets.
-- Swarm dashboards that spawn unsupervised subordinates. Nimbalyst: bottleneck moves to verification; duplicated fixes and dropped work.
+- Swarm dashboards that spawn unsupervised subordinates. Review becomes the bottleneck (duplicated fixes, dropped work).
 - Session lists without durable task state.
 
 ## 7. Recommended ADash information architecture
@@ -195,7 +222,8 @@ Highest-leverage steals that match open JJ tasks:
 
 ## 9. Sources
 
-- [Nimbalyst, Best AI Agent Orchestration Platforms 2026](https://nimbalyst.com/blog/best-ai-agent-orchestration-platforms-2026/) — taxonomy + six control-plane tests. Vendor-authored; claims about Nimbalyst itself discounted.
+- Licence filter: OSI-open / fully free self-host only. No paid SKU for inbox, fleet, traces, or worktrees.
+- [Nimbalyst, Best AI Agent Orchestration Platforms 2026](https://nimbalyst.com/blog/best-ai-agent-orchestration-platforms-2026/) — taxonomy + six control-plane tests. Vendor-authored and has a paid Teams SKU; claims about Nimbalyst itself discounted; product disqualified.
 - [sifted-awesome-ai-agents / Agent Orchestration.md](https://github.com/sifted-network/sifted-awesome-ai-agents/blob/main/top100/Agent%20Orchestration.md) — star ranking 2026-08-31.
 - [stablyai/orca](https://github.com/stablyai/orca) and [Orca agent dashboard docs](https://www.onorca.dev/docs/model/agents-sessions).
 - [humanlayer/12-factor-agents](https://github.com/humanlayer/12-factor-agents).

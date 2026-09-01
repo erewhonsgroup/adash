@@ -7,3 +7,4 @@
 - ADash must not copy `C:\AM`'s unrelated trees. The hub is inventory + dashboard + SQLite, not a dump of AM.
 - Jarvis/JJ lives at `C:\ALLU\projects\Jarvis`. `C:\ACLC\projects\Jarvis` is not a path on this PC. An empty listing of ALLU is not proof the repo is missing — open that exact folder.
 - Refer to the system as JJ; Jarvis is the search/folder label. Custom ADash decks must call JJ stores, not reimplement ledger writes.
+- ADash dashboard work steals UX only from OSI-open or fully free self-host tools. No product whose inbox, fleet, traces, or worktrees sit behind a paid SKU (Nimbalyst Teams, LangSmith, CrewAI Enterprise, Warp cloud agents, Superset ELv2, Conductor).
