@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}JJ · ADash{% endblock %}
 {% block body %}
-<p class="eyebrow"><a href="/">Fleet board</a> · Jarvis / JJ</p>
+<p class="eyebrow"><a href="/">Fleet board</a> · <a href="/inbox">Needs Joshua</a> · Jarvis / JJ</p>
 <section class="hero">
   <div>
     <h1>JJ command deck</h1>
@@ -30,7 +30,23 @@
 <div class="deck">
   <section class="panel">
     <h2>Next work</h2>
+    {% if kernel.next_task %}
+    <div class="row next-task">
+      <span class="badge working">next</span>
+      <span class="mono muted">#{{ kernel.next_task.id }}</span>
+      <span class="grow"><b>{{ kernel.next_task.title }}</b></span>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="task done {{ kernel.next_task.id }}" />
+        <button type="submit">Done</button>
+      </form>
+      <form method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
+        <input type="hidden" name="line" value="task drop {{ kernel.next_task.id }}" />
+        <button class="ghost" type="submit">Drop</button>
+      </form>
+    </div>
+    {% endif %}
     {% for task in kernel.open_tasks %}
+    {% if not kernel.next_task or task.id != kernel.next_task.id %}
     <div class="row">
       <span class="mono muted">#{{ task.id }}</span>
       <span class="grow">{{ task.title }}</span>
@@ -43,8 +59,11 @@
         <button class="ghost" type="submit">Drop</button>
       </form>
     </div>
+    {% endif %}
     {% else %}
+    {% if not kernel.next_task %}
     <p class="muted">No open JJ tasks.</p>
+    {% endif %}
     {% endfor %}
     {% for task in kernel.working_tasks %}
     <div class="row">

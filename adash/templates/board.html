@@ -5,7 +5,7 @@
   <div>
     <p class="eyebrow">Control center</p>
     <h1>ADash</h1>
-    <p class="meta">{{ hostname }} · last ingest {{ last_ingest or "never" }} · {{ projects|length }} visible / {{ tally.get("projects", 0) }} stored</p>
+    <p class="meta">{{ hostname }} · last ingest {{ last_ingest or "never" }} · {{ projects|length }} visible / {{ tally.get("projects", 0) }} stored · <a href="/inbox">{{ needs_you_count }} need you</a></p>
   </div>
   <div class="stats">
     {% for key in ["working", "review", "blocked", "queued", "done", "idle"] %}

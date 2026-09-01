@@ -230,6 +230,20 @@ footer {
   font-size: 0.85rem;
 }
 
+.nav {
+  margin-bottom: 0.85rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.inbox-item {
+  margin-bottom: 0.75rem;
+}
+
+.next-task {
+  border-color: var(--gold-dim);
+}
+
 .command-bar {
   display: flex;
   gap: 0.45rem;

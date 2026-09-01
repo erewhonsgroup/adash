@@ -78,6 +78,7 @@ def snapshot(spec: dict[str, Any]) -> dict[str, Any]:
         state["error"] = ""
         state["open_tasks"] = [t for t in state.get("tasks", []) if t.get("status") == "open"]
         state["working_tasks"] = [t for t in state.get("tasks", []) if t.get("status") == "working"]
+        state["next_task"] = next_open_task(state["open_tasks"])
         state["event_total"] = sum(int(v) for v in (state.get("event_counts") or {}).values())
         return state
     except Exception as exc:  # noqa: BLE001 — deck must still render
@@ -96,8 +97,23 @@ def snapshot(spec: dict[str, Any]) -> dict[str, Any]:
             "memory_active": [],
             "open_tasks": [],
             "working_tasks": [],
+            "next_task": None,
             "event_total": 0,
         }
+
+
+def next_open_task(open_tasks: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """P7-style: exactly one next task — lowest open id."""
+    numbered: list[dict[str, Any]] = []
+    for task in open_tasks:
+        try:
+            int(task.get("id"))
+        except (TypeError, ValueError):
+            continue
+        numbered.append(task)
+    if not numbered:
+        return None
+    return min(numbered, key=lambda task: int(task["id"]))
 
 
 def execute(spec: dict[str, Any], line: str) -> dict[str, Any]:

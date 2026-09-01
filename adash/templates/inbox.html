@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Needs Joshua · ADash{% endblock %}
+{% block body %}
+<p class="eyebrow"><a href="/">Fleet board</a> · inbox</p>
+<section class="hero">
+  <div>
+    <h1>Needs Joshua</h1>
+    <p class="meta">{{ items|length }} item{% if items|length != 1 %}s{% endif %} — hub review/blocked and JJ approvals</p>
+  </div>
+</section>
+{% if flash %}<p class="badge working">{{ flash }}</p>{% endif %}
+{% if flash_error %}<p class="badge blocked">{{ flash_error }}</p>{% endif %}
+
+{% for item in items %}
+<div class="panel inbox-item">
+  <div class="row">
+    <span class="badge {% if item.kind == 'jj-approval' %}review{% elif item.state == 'blocked' %}blocked{% else %}review{% endif %}">{{ item.kind }}</span>
+    <span class="badge {{ item.state }}">{{ item.state }}</span>
+    <span class="mono muted">{{ item.pc }} / {{ item.project_id }}</span>
+    <span class="grow"><b>{{ item.title }}</b>
+      {% if item.task %}<div>{{ item.task }}</div>{% endif %}
+      {% if item.note or item.reason %}<div class="muted">{{ item.note or item.reason }}</div>{% endif %}
+    </span>
+  </div>
+  <div class="row">
+    {% if item.kind == "hub" %}
+    <form method="post" action="/project/{{ item.pc }}/{{ item.project_id }}/state">
+      <input type="hidden" name="return_to" value="/inbox" />
+      <input type="hidden" name="state" value="working" />
+      <input type="hidden" name="task" value="{{ item.task }}" />
+      <input type="hidden" name="note" value="{{ item.note }}" />
+      <input type="hidden" name="blocker" value="" />
+      <button type="submit">Working</button>
+    </form>
+    <form method="post" action="/project/{{ item.pc }}/{{ item.project_id }}/state">
+      <input type="hidden" name="return_to" value="/inbox" />
+      <input type="hidden" name="state" value="done" />
+      <input type="hidden" name="task" value="{{ item.task }}" />
+      <input type="hidden" name="note" value="{{ item.note }}" />
+      <input type="hidden" name="blocker" value="" />
+      <button type="submit">Done</button>
+    </form>
+    <a class="muted" href="/project/{{ item.pc }}/{{ item.project_id }}">open</a>
+    {% elif item.kind == "jj-approval" %}
+    <form method="post" action="/project/{{ item.pc }}/{{ item.project_id }}/command">
+      <input type="hidden" name="return_to" value="/inbox" />
+      <input type="hidden" name="line" value="approve {{ item.approval_id }}" />
+      <button type="submit">Approve</button>
+    </form>
+    <form method="post" action="/project/{{ item.pc }}/{{ item.project_id }}/command">
+      <input type="hidden" name="return_to" value="/inbox" />
+      <input type="hidden" name="line" value="deny {{ item.approval_id }}" />
+      <button class="ghost" type="submit">Deny</button>
+    </form>
+    <a class="muted" href="/project/{{ item.pc }}/{{ item.project_id }}">deck</a>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p class="muted">Nothing needs you. Hub review/blocked is empty and JJ has no pending approvals.</p>
+{% endfor %}
+{% endblock %}

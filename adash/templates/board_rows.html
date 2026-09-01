@@ -1,7 +1,7 @@
 {% for project in projects %}
 <tr>
   <td><span class="badge {{ project.attention }}">{{ project.attention }}</span></td>
-  <td>{{ project.state }}</td>
+  <td>{{ project.state }}{% if project.needs_you %} <span class="badge review">needs you</span>{% endif %}</td>
   <td class="mono">{{ project.pc }}</td>
   <td class="mono"><a href="/project/{{ project.pc }}/{{ project.id }}">{{ project.id }}</a>{% if project.id in custom_dashboards %} <span class="badge working">deck</span>{% endif %}</td>
   <td>{{ project.title }}</td>

@@ -18,6 +18,7 @@ from adash.dashboards import custom_ids, spec_for
 from adash.dashboards.jj import execute as jj_execute
 from adash.dashboards.jj import render_page as jj_render
 from adash.db import connect, counts, get_project, init_db, insert_event, list_events, list_projects, upsert_project
+from adash.inbox import annotate_needs_you, collect_inbox, jj_pending_counts, safe_return
 from adash.ingest import ingest
 from adash.paths import VALID_STATES, load_fleet, local_pc_id, now_stamp
 
@@ -81,9 +82,11 @@ def create_app() -> FastAPI:
         if meta:
             last_ingest = meta["value"]
         conn.close()
+        pending = jj_pending_counts(app.state.fleet)
+        annotated = annotate_needs_you(projects, app.state.fleet, pending)
         return {
             "request": request,
-            "projects": projects,
+            "projects": annotated,
             "pc": pc,
             "state": state,
             "attention": attention,
@@ -96,6 +99,7 @@ def create_app() -> FastAPI:
             "hostname": socket.gethostname(),
             "version": VERSION,
             "custom_dashboards": custom_ids(app.state.fleet),
+            "needs_you_count": sum(1 for item in annotated if item.get("needs_you")),
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -117,6 +121,32 @@ def create_app() -> FastAPI:
         q: str = "",
     ) -> HTMLResponse:
         return templates.TemplateResponse(request, "board_rows.html", board_context(request, pc, state, attention, q))
+
+    @app.get("/inbox", response_class=HTMLResponse)
+    def inbox_page(request: Request) -> HTMLResponse:
+        conn = open_db(write=True)
+        projects = list_projects(conn)
+        conn.close()
+        items = collect_inbox(projects, app.state.fleet)
+        return templates.TemplateResponse(
+            request,
+            "inbox.html",
+            {
+                "request": request,
+                "items": items,
+                "version": VERSION,
+                "hostname": socket.gethostname(),
+                "flash": str(request.query_params.get("flash") or ""),
+                "flash_error": str(request.query_params.get("err") or ""),
+            },
+        )
+
+    @app.get("/api/inbox")
+    def api_inbox() -> JSONResponse:
+        conn = open_db(write=True)
+        projects = list_projects(conn)
+        conn.close()
+        return JSONResponse(collect_inbox(projects, app.state.fleet))
 
     @app.get("/project/{project_id}", response_class=HTMLResponse)
     def project_local(project_id: str) -> RedirectResponse:
@@ -171,17 +201,24 @@ def create_app() -> FastAPI:
         )
 
     @app.post("/project/{pc}/{project_id}/command")
-    def project_command(pc: str, project_id: str, line: str = Form("")) -> RedirectResponse:
+    def project_command(
+        pc: str,
+        project_id: str,
+        line: str = Form(""),
+        return_to: str = Form(""),
+    ) -> RedirectResponse:
         spec = spec_for(app.state.fleet, project_id)
-        target = f"/project/{pc}/{project_id}"
+        target = safe_return(return_to, f"/project/{pc}/{project_id}")
         if not spec or spec.get("kind") != "jj":
             return RedirectResponse(url=target, status_code=303)
         try:
             result = jj_execute(spec, line)
             flash = quote(str(result.get("result") or "ok"), safe="")
-            return RedirectResponse(url=f"{target}?flash={flash}", status_code=303)
+            sep = "&" if "?" in target else "?"
+            return RedirectResponse(url=f"{target}{sep}flash={flash}", status_code=303)
         except Exception as exc:  # noqa: BLE001 — command bar must bounce errors to the deck
-            return RedirectResponse(url=f"{target}?err={quote(str(exc), safe='')}", status_code=303)
+            sep = "&" if "?" in target else "?"
+            return RedirectResponse(url=f"{target}{sep}err={quote(str(exc), safe='')}", status_code=303)
 
     @app.get("/api/project/{pc}/{project_id}/kernel")
     def project_kernel(pc: str, project_id: str) -> JSONResponse:
@@ -201,9 +238,11 @@ def create_app() -> FastAPI:
         task: str = Form(""),
         note: str = Form(""),
         blocker: str = Form(""),
+        return_to: str = Form(""),
     ) -> RedirectResponse:
+        target = safe_return(return_to, f"/project/{pc}/{project_id}")
         if state not in VALID_STATES:
-            return RedirectResponse(url=f"/project/{pc}/{project_id}", status_code=303)
+            return RedirectResponse(url=target, status_code=303)
         conn = open_db(write=True)
         row = get_project(conn, project_id, pc)
         if row is None:
@@ -244,7 +283,7 @@ def create_app() -> FastAPI:
         )
         conn.commit()
         conn.close()
-        return RedirectResponse(url=f"/project/{pc}/{project_id}", status_code=303)
+        return RedirectResponse(url=target, status_code=303)
 
     @app.post("/api/ingest")
     def api_ingest() -> dict[str, Any]:
