@@ -24,6 +24,8 @@ Then open `http://127.0.0.1:8788/`. Health check: `http://127.0.0.1:8788/healthz
 
 Jarvis/JJ has a custom command deck at `http://127.0.0.1:8788/project/pc1/jarvis`. It reads the JJ kernel at `C:\ALLU\projects\Jarvis` (`~\.jj\ledger.db`) and runs the same audited verbs as `python -m jj`.
 
+Research for the next dashboard work (agent control planes vs AI OS vs observability): `docs/DASHBOARD_RESEARCH.md`.
+
 Re-ingest from the board or:
 
 ```powershell
