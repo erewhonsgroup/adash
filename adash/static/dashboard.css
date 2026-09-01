@@ -256,6 +256,17 @@ footer {
   font-family: Consolas, "Cascadia Mono", ui-monospace, monospace;
 }
 
+.brief {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem;
+  max-height: 14rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: 0.78rem/1.4 Consolas, "Cascadia Mono", ui-monospace, monospace;
+  border: 1px solid var(--line);
+  background: #0c0d09;
+}
+
 .deck {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

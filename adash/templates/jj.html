@@ -22,7 +22,7 @@
 
 <form class="command-bar" method="post" action="/project/{{ project.pc }}/{{ project.id }}/command">
   <label class="mono" for="line">:</label>
-  <input id="line" name="line" autofocus placeholder="task add …  |  approve 3  |  deny 3  |  task done 5  |  task drop 5" />
+  <input id="line" name="line" autofocus placeholder="dispatch 4  |  task add …  |  approve 3  |  task done 5" />
   <button type="submit">Run</button>
 </form>
 <p class="muted">Same audited JJ stores as <span class="mono">python -m jj</span>. Does not spawn workers. Native cockpit stays <span class="mono">python -m jj cockpit</span> on :8377.</p>
@@ -44,6 +44,21 @@
         <button class="ghost" type="submit">Drop</button>
       </form>
     </div>
+    <form class="stack" method="post" action="/project/{{ project.pc }}/{{ project.id }}/dispatch">
+      <input type="hidden" name="task_id" value="{{ kernel.next_task.id }}" />
+      <label>Worker
+        <select name="worker">
+          <option value="codex" selected>codex</option>
+          <option value="kimi">kimi</option>
+        </select>
+      </label>
+      <label>Mission <input name="mission" value="{{ kernel.next_task.title }}" /></label>
+      <label>Success test <input name="success_test" value="python -m pytest -q" /></label>
+      <label>Files allowed <input name="files_allowed" value="jj/**,tests/**" /></label>
+      <label>Files forbidden <input name="files_forbidden" value="" /></label>
+      <button type="submit">Send to Codex</button>
+    </form>
+    <p class="muted">Books a JJ lane and writes a paste-ready brief. Does not spawn Codex.</p>
     {% endif %}
     {% for task in kernel.open_tasks %}
     {% if not kernel.next_task or task.id != kernel.next_task.id %}
@@ -110,6 +125,19 @@
     </div>
     {% else %}
     <p class="muted">No events.</p>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Live dispatches</h2>
+    {% for lane in kernel.live_dispatches %}
+    <div class="row">
+      <span class="badge working">{{ lane.worker }} {{ lane.run_id }}</span>
+      <span class="grow">task {{ lane.task_id }} · {{ lane.mission }}</span>
+    </div>
+    <pre class="brief">{{ lane.brief }}</pre>
+    {% else %}
+    <p class="muted">No live Codex/Kimi lanes. Dispatch from Next work — paste the brief yourself.</p>
     {% endfor %}
   </section>
 

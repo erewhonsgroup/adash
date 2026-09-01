@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from adash import VERSION
 from adash.attention import score_attention
 from adash.dashboards import custom_ids, spec_for
+from adash.dashboards.jj import dispatch as jj_dispatch
 from adash.dashboards.jj import execute as jj_execute
 from adash.dashboards.jj import render_page as jj_render
 from adash.db import connect, counts, get_project, init_db, insert_event, list_events, list_projects, upsert_project
@@ -217,6 +218,39 @@ def create_app() -> FastAPI:
             sep = "&" if "?" in target else "?"
             return RedirectResponse(url=f"{target}{sep}flash={flash}", status_code=303)
         except Exception as exc:  # noqa: BLE001 — command bar must bounce errors to the deck
+            sep = "&" if "?" in target else "?"
+            return RedirectResponse(url=f"{target}{sep}err={quote(str(exc), safe='')}", status_code=303)
+
+    @app.post("/project/{pc}/{project_id}/dispatch")
+    def project_dispatch(
+        pc: str,
+        project_id: str,
+        task_id: int = Form(...),
+        worker: str = Form("codex"),
+        mission: str = Form(""),
+        success_test: str = Form(""),
+        files_allowed: str = Form(""),
+        files_forbidden: str = Form(""),
+        return_to: str = Form(""),
+    ) -> RedirectResponse:
+        spec = spec_for(app.state.fleet, project_id)
+        target = safe_return(return_to, f"/project/{pc}/{project_id}")
+        if not spec or spec.get("kind") != "jj":
+            return RedirectResponse(url=target, status_code=303)
+        try:
+            result = jj_dispatch(
+                spec,
+                task_id,
+                worker=worker,
+                mission=mission,
+                success_test=success_test,
+                files_allowed=files_allowed,
+                files_forbidden=files_forbidden,
+            )
+            flash = quote(str(result.get("result") or "ok"), safe="")
+            sep = "&" if "?" in target else "?"
+            return RedirectResponse(url=f"{target}{sep}flash={flash}", status_code=303)
+        except Exception as exc:  # noqa: BLE001 — dispatch must bounce errors to the deck
             sep = "&" if "?" in target else "?"
             return RedirectResponse(url=f"{target}{sep}err={quote(str(exc), safe='')}", status_code=303)
 
