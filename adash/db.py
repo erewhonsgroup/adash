@@ -78,7 +78,8 @@ def upsert_project(conn: sqlite3.Connection, row: dict[str, Any]) -> None:
         "reason",
         "ingested_at",
     ]
-    values = [row.get(col, "" if col not in {"exists_on_disk", "is_git", "attention_score"} else 0) for col in cols]
+    defaults: dict[str, Any] = {"exists_on_disk": 0, "is_git": 0, "attention_score": 100}
+    values = [row.get(col, defaults.get(col, "")) for col in cols]
     placeholders = ", ".join("?" for _ in cols)
     assignments = ", ".join(f"{col} = excluded.{col}" for col in cols if col not in {"id", "pc"})
     conn.execute(

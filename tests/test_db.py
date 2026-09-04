@@ -34,3 +34,16 @@ def test_upsert_and_filter(db_conn):
     assert [row["id"] for row in only_pc2] == ["beta"]
     working = list_projects(db_conn, state="working")
     assert [row["id"] for row in working] == ["alpha"]
+
+
+def test_upsert_defaults_attention_to_the_idle_baseline(db_conn):
+    upsert_project(db_conn, {"id": "sparse", "pc": "pc1", "title": "Sparse row"})
+    upsert_project(
+        db_conn,
+        {"id": "urgent", "pc": "pc1", "title": "Urgent row", "attention_score": 0},
+    )
+    db_conn.commit()
+    row = get_project(db_conn, "sparse", "pc1")
+    assert row["attention_score"] == 100
+    order = [item["id"] for item in list_projects(db_conn)]
+    assert order.index("urgent") < order.index("sparse")
