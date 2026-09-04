@@ -1,4 +1,6 @@
-from adash.db import get_project, list_projects, upsert_project
+import pytest
+
+from adash.db import connect, get_project, list_projects, upsert_project
 
 
 def test_upsert_and_filter(db_conn):
@@ -34,3 +36,11 @@ def test_upsert_and_filter(db_conn):
     assert [row["id"] for row in only_pc2] == ["beta"]
     working = list_projects(db_conn, state="working")
     assert [row["id"] for row in working] == ["alpha"]
+
+
+def test_readonly_connect_does_not_create_the_file(tmp_path):
+    missing = tmp_path / "nested" / "adash.db"
+    with pytest.raises(FileNotFoundError):
+        connect(missing, write=False)
+    assert not missing.exists()
+    assert not missing.parent.exists()
