@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import socket
 from urllib.parse import quote
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
 from pathlib import Path
 from typing import Any
 
@@ -75,14 +75,13 @@ def create_app() -> FastAPI:
         return payload
 
     def board_context(request: Request, pc: str, state: str, attention: str, q: str) -> dict[str, Any]:
-        conn = open_db(write=True)
-        projects = list_projects(conn, pc=pc, state=state, attention=attention, q=q)
-        tally = counts(conn)
-        last_ingest = ""
-        meta = conn.execute("SELECT value FROM meta WHERE key = 'last_ingest'").fetchone()
-        if meta:
-            last_ingest = meta["value"]
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            projects = list_projects(conn, pc=pc, state=state, attention=attention, q=q)
+            tally = counts(conn)
+            last_ingest = ""
+            meta = conn.execute("SELECT value FROM meta WHERE key = 'last_ingest'").fetchone()
+            if meta:
+                last_ingest = meta["value"]
         pending = jj_pending_counts(app.state.fleet)
         annotated = annotate_needs_you(projects, app.state.fleet, pending)
         return {
@@ -125,9 +124,8 @@ def create_app() -> FastAPI:
 
     @app.get("/inbox", response_class=HTMLResponse)
     def inbox_page(request: Request) -> HTMLResponse:
-        conn = open_db(write=True)
-        projects = list_projects(conn)
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            projects = list_projects(conn)
         items = collect_inbox(projects, app.state.fleet)
         return templates.TemplateResponse(
             request,
@@ -144,9 +142,8 @@ def create_app() -> FastAPI:
 
     @app.get("/api/inbox")
     def api_inbox() -> JSONResponse:
-        conn = open_db(write=True)
-        projects = list_projects(conn)
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            projects = list_projects(conn)
         return JSONResponse(collect_inbox(projects, app.state.fleet))
 
     @app.get("/project/{project_id}", response_class=HTMLResponse)
@@ -156,10 +153,9 @@ def create_app() -> FastAPI:
 
     @app.get("/project/{pc}/{project_id}", response_class=HTMLResponse)
     def project_page(pc: str, project_id: str, request: Request) -> HTMLResponse:
-        conn = open_db(write=True)
-        row = get_project(conn, project_id, pc)
-        events = list_events(conn, project_id, pc) if row else []
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            row = get_project(conn, project_id, pc)
+            events = list_events(conn, project_id, pc) if row else []
         if row is None:
             return templates.TemplateResponse(
                 request,
@@ -277,60 +273,56 @@ def create_app() -> FastAPI:
         target = safe_return(return_to, f"/project/{pc}/{project_id}")
         if state not in VALID_STATES:
             return RedirectResponse(url=target, status_code=303)
-        conn = open_db(write=True)
-        row = get_project(conn, project_id, pc)
-        if row is None:
-            conn.close()
-            return RedirectResponse(url="/", status_code=303)
-        previous = row["state"]
-        data = dict(row)
-        data["state"] = state
-        data["task"] = task
-        data["note"] = note
-        data["blocker"] = blocker
-        data["updated_at"] = now_stamp()
-        score, label, reason = score_attention(
-            state=state,
-            dirty=str(data.get("git_dirty") or ""),
-            task=task,
-            note=note,
-            updated=data["updated_at"],
-        )
-        data["attention_score"] = score
-        data["attention"] = label
-        data["reason"] = reason
-        upsert_project(conn, data)
-        insert_event(
-            conn,
-            {
-                "time": data["updated_at"],
-                "project_id": project_id,
-                "pc": pc,
-                "event_type": "state_changed",
-                "state": state,
-                "previous_state": previous,
-                "task": task,
-                "note": note,
-                "source": "adash",
-                "payload_json": json.dumps({"blocker": blocker}),
-            },
-        )
-        conn.commit()
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            row = get_project(conn, project_id, pc)
+            if row is None:
+                return RedirectResponse(url="/", status_code=303)
+            previous = row["state"]
+            data = dict(row)
+            data["state"] = state
+            data["task"] = task
+            data["note"] = note
+            data["blocker"] = blocker
+            data["updated_at"] = now_stamp()
+            score, label, reason = score_attention(
+                state=state,
+                dirty=str(data.get("git_dirty") or ""),
+                task=task,
+                note=note,
+                updated=data["updated_at"],
+            )
+            data["attention_score"] = score
+            data["attention"] = label
+            data["reason"] = reason
+            upsert_project(conn, data)
+            insert_event(
+                conn,
+                {
+                    "time": data["updated_at"],
+                    "project_id": project_id,
+                    "pc": pc,
+                    "event_type": "state_changed",
+                    "state": state,
+                    "previous_state": previous,
+                    "task": task,
+                    "note": note,
+                    "source": "adash",
+                    "payload_json": json.dumps({"blocker": blocker}),
+                },
+            )
+            conn.commit()
         return RedirectResponse(url=target, status_code=303)
 
     @app.post("/api/ingest")
     def api_ingest() -> dict[str, Any]:
-        conn = open_db(write=True)
-        result = ingest(conn, app.state.fleet)
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            result = ingest(conn, app.state.fleet)
         return {"ok": True, **result}
 
     @app.get("/api/projects")
     def api_projects(pc: str = "", state: str = "", attention: str = "", q: str = "") -> JSONResponse:
-        conn = open_db(write=True)
-        rows = [dict(item) for item in list_projects(conn, pc=pc, state=state, attention=attention, q=q)]
-        conn.close()
+        with closing(open_db(write=True)) as conn:
+            rows = [dict(item) for item in list_projects(conn, pc=pc, state=state, attention=attention, q=q)]
         return JSONResponse(rows)
 
     return app
