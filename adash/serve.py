@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
             "hostname": socket.gethostname(),
             "pc": local_pc_id(fleet),
         }
+        conn = None
         try:
             conn = open_db(write=True)
             payload["projects"] = conn.execute("SELECT COUNT(*) AS n FROM projects").fetchone()["n"]
@@ -67,11 +68,14 @@ def create_app() -> FastAPI:
             row = conn.execute("SELECT value FROM meta WHERE key = 'last_ingest'").fetchone()
             if row:
                 payload["last_ingest"] = row["value"]
-            conn.close()
         except Exception as exc:  # noqa: BLE001 — healthz must not 500
+            payload["status"] = "degraded"
             payload["projects"] = 0
             payload["db"] = "empty"
             payload["detail"] = str(exc.__class__.__name__)
+        finally:
+            if conn is not None:
+                conn.close()
         return payload
 
     def board_context(request: Request, pc: str, state: str, attention: str, q: str) -> dict[str, Any]:
