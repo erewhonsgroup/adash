@@ -34,12 +34,19 @@ def load_fleet(path: Path | None = None) -> dict[str, Any]:
     return data
 
 
+def short_hostname(name: str) -> str:
+    """Bare machine name: no domain suffix, case-folded."""
+    return str(name or "").strip().split(".")[0].lower()
+
+
 def local_pc_id(fleet: dict[str, Any] | None = None) -> str:
     cfg = fleet if fleet is not None else load_fleet()
-    hostname = socket.gethostname()
-    for pc in cfg.get("pcs", []):
-        if str(pc.get("hostname", "")).lower() == hostname.lower():
-            return str(pc["id"])
+    hostname = short_hostname(socket.gethostname())
+    if hostname:
+        for pc in cfg.get("pcs", []):
+            name = short_hostname(pc.get("hostname", ""))
+            if name and name == hostname:
+                return str(pc["id"])
     return "pc1"
 
 
