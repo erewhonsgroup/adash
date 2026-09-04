@@ -45,3 +45,14 @@ def test_live_am_registry_if_present():
     rows = parse_sessions_file(root / "AM.Sessions.ps1")
     assert len(rows) >= 70
     assert any(row["id"] == "am" for row in rows)
+
+
+def test_local_pc_id_matches_fqdn_hostname(monkeypatch):
+    from adash import paths
+
+    fleet = {"pcs": [{"id": "pc5", "hostname": "ThankYouJesus"}]}
+    monkeypatch.setattr(paths.socket, "gethostname", lambda: "THANKYOUJESUS.lan")
+    assert paths.local_pc_id(fleet) == "pc5"
+
+    monkeypatch.setattr(paths.socket, "gethostname", lambda: "somebox")
+    assert paths.local_pc_id(fleet) == "pc1"
