@@ -11,6 +11,8 @@ def connect(path: Path | None = None, *, write: bool = True) -> sqlite3.Connecti
     target = path or db_path()
     if write:
         target.parent.mkdir(parents=True, exist_ok=True)
+    elif not target.is_file():
+        raise FileNotFoundError(f"hub database not found: {target}")
     conn = sqlite3.connect(str(target), timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
